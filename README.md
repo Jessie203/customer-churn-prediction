@@ -80,13 +80,13 @@ An example deployment is presented using a Streamlit dashboard, allowing busines
 - Obtain churn predictions and probabilities
 - Prototype for future live deployment
 
-```bash
-streamlit run app/app.py
-
 ---
 
 ## 📎 Data Source
 
 - [Telco Customer Churn Dataset (Kaggle)](https://www.kaggle.com/datasets/blastchar/telco-customer-churn)
+
+```bash
+streamlit run app/app.py
 
 
