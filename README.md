@@ -72,6 +72,12 @@ The ROC curves highlight that XGBoost slightly outperformed the other models, wh
 
 ---
 
+## 📎 Data Source
+
+- [Telco Customer Churn Dataset (Kaggle)](https://www.kaggle.com/datasets/blastchar/telco-customer-churn)
+
+---
+
 ## 💻 Deployment Demo
 
 An example deployment is presented using a Streamlit dashboard, allowing business stakeholders to interact with the model:
@@ -79,12 +85,6 @@ An example deployment is presented using a Streamlit dashboard, allowing busines
 - Enter new customer details
 - Obtain churn predictions and probabilities
 - Prototype for future live deployment
-
----
-
-## 📎 Data Source
-
-- [Telco Customer Churn Dataset (Kaggle)](https://www.kaggle.com/datasets/blastchar/telco-customer-churn)
 
 ```bash
 streamlit run app/app.py
