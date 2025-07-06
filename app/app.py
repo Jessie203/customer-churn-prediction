@@ -1,51 +1,87 @@
-from flask import Flask, request, jsonify
-import joblib
+import streamlit as st
 import pandas as pd
 import numpy as np
+import joblib
 
-app = Flask(__name__)
+# Title
+st.title("🧾 Customer Churn Prediction Demo")
 
-# Load model, scaler, and feature columns
-model = joblib.load('app/model.pkl')
-scaler = joblib.load('app/scaler.pkl')
-feature_columns = joblib.load('app/columns.pkl')
+# Load model, scaler, and columns
+model_path = 'final_lr_model.pkl'
+scaler_path = 'final_scaler.pkl'
+columns_path = 'feature_columns.pkl'
 
-@app.route('/predict', methods=['POST'])
-def predict():
-    data = request.get_json(force=True)
-    df = pd.DataFrame([data])
+lr = joblib.load(model_path)
+scaler = joblib.load(scaler_path)
+feature_columns = joblib.load(columns_path)
 
-    # Map binary columns (assuming already converted if needed)
-    binary_cols = ['Partner', 'Dependents', 'PhoneService', 'PaperlessBilling']
-    for col in binary_cols:
-        if col in df.columns:
-            df[col] = df[col].map({'Yes': 1, 'No': 0})
+# Sidebar for input
+st.sidebar.header("Input Customer Details")
 
-    # One-hot encode
-    df_encoded = pd.get_dummies(df, drop_first=True)
+gender = st.sidebar.selectbox("Gender", ["Female", "Male"])
+SeniorCitizen = st.sidebar.selectbox("Senior Citizen", [0, 1])
+Partner = st.sidebar.selectbox("Partner", ["Yes", "No"])
+Dependents = st.sidebar.selectbox("Dependents", ["Yes", "No"])
+tenure = st.sidebar.slider("Tenure (months)", 0, 72, 12)
+PhoneService = st.sidebar.selectbox("Phone Service", ["Yes", "No"])
+MultipleLines = st.sidebar.selectbox("Multiple Lines", ["No", "Yes", "No phone service"])
+InternetService = st.sidebar.selectbox("Internet Service", ["DSL", "Fibre optic", "No"])
+OnlineSecurity = st.sidebar.selectbox("Online Security", ["Yes", "No", "No internet service"])
+OnlineBackup = st.sidebar.selectbox("Online Backup", ["Yes", "No", "No internet service"])
+DeviceProtection = st.sidebar.selectbox("Device Protection", ["Yes", "No", "No internet service"])
+TechSupport = st.sidebar.selectbox("Tech Support", ["Yes", "No", "No internet service"])
+StreamingTV = st.sidebar.selectbox("Streaming TV", ["Yes", "No", "No internet service"])
+StreamingMovies = st.sidebar.selectbox("Streaming Movies", ["Yes", "No", "No internet service"])
+Contract = st.sidebar.selectbox("Contract", ["Month-to-month", "One year", "Two year"])
+PaperlessBilling = st.sidebar.selectbox("Paperless Billing", ["Yes", "No"])
+PaymentMethod = st.sidebar.selectbox("Payment Method", ["Electronic check", "Mailed check", "Bank transfer (automatic)", "Credit card (automatic)"])
+MonthlyCharges = st.sidebar.number_input("Monthly Charges", 0.0, 150.0, 70.0)
+TotalCharges = st.sidebar.number_input("Total Charges", 0.0, 9000.0, 2500.0)
 
-    # Align columns
-    df_aligned = df_encoded.reindex(columns=feature_columns, fill_value=0)
-
-    # Scale numeric
-    num_cols = ['tenure', 'MonthlyCharges', 'TotalCharges']
-    df_aligned[num_cols] = scaler.transform(df_aligned[num_cols])
-
-    # Predict
-    prediction = model.predict(df_aligned)[0]
-    probability = round(model.predict_proba(df_aligned)[0][1], 2)
-
-    # Example "LLM suggestion" idea
-    if prediction == 1:
-        message = "High risk of churn. Suggest offering a personalised retention plan."
-    else:
-        message = "Low churn risk. Recommend maintaining current engagement strategies."
-
-    return jsonify({
-        'PredictedChurn': int(prediction),
-        'ChurnProbability': probability,
-        'SuggestedAction': message
+# Predict button
+if st.sidebar.button("Predict"):
+    # Create dataframe
+    new_customer = pd.DataFrame({
+        'gender': [gender],
+        'SeniorCitizen': [SeniorCitizen],
+        'Partner': [Partner],
+        'Dependents': [Dependents],
+        'tenure': [tenure],
+        'PhoneService': [PhoneService],
+        'MultipleLines': [MultipleLines],
+        'InternetService': [InternetService],
+        'OnlineSecurity': [OnlineSecurity],
+        'OnlineBackup': [OnlineBackup],
+        'DeviceProtection': [DeviceProtection],
+        'TechSupport': [TechSupport],
+        'StreamingTV': [StreamingTV],
+        'StreamingMovies': [StreamingMovies],
+        'Contract': [Contract],
+        'PaperlessBilling': [PaperlessBilling],
+        'PaymentMethod': [PaymentMethod],
+        'MonthlyCharges': [MonthlyCharges],
+        'TotalCharges': [TotalCharges]
     })
 
-if __name__ == '__main__':
-    app.run(debug=True)
+    # Map binary columns
+    for col in ['Partner', 'Dependents', 'PhoneService', 'PaperlessBilling']:
+        new_customer[col] = new_customer[col].map({'Yes': 1, 'No': 0})
+
+    # One-hot encode
+    new_customer_encoded = pd.get_dummies(new_customer, drop_first=True)
+
+    # Align columns
+    new_customer_aligned = new_customer_encoded.reindex(columns=feature_columns, fill_value=0)
+
+    # Scale numeric columns
+    num_cols = ['tenure', 'MonthlyCharges', 'TotalCharges']
+    new_customer_aligned[num_cols] = scaler.transform(new_customer_aligned[num_cols])
+
+    # Predict
+    pred = lr.predict(new_customer_aligned)[0]
+    prob = lr.predict_proba(new_customer_aligned)[0][1]
+
+    # Output
+    st.subheader("Prediction Result")
+    st.write(f"**Predicted Churn:** {'Yes' if pred == 1 else 'No'}")
+    st.write(f"**Churn Probability:** {prob:.2f}")
